@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Burn Setup.exe bootstrapper for Windows Defrag.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+
+  <Bundle Name="Windows Defrag"
+          Version="1.0.7"
+          Manufacturer="Skywere Industries"
+          UpgradeCode="D5E9B2A3-4C6F-5B8D-0E12-7A9F3C5D8B02"
+          Copyright="Copyright (c) Skywere Industries"
+          IconSourceFile="..\..\..\assets\installer.ico"
+          DisableModify="yes"
+          DisableRemove="no">
+
+    <Variable Name="InstallFolder"
+              Type="formatted"
+              Value="[ProgramFiles64Folder]WindowsDefrag\"
+              bal:Overridable="yes" />
+
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication
+          LicenseUrl="https://opensource.org/licenses/MIT"
+          Theme="hyperlinkLicense"
+          SuppressOptionsUI="yes"
+          SuppressDowngradeFailure="no"
+          ShowVersion="yes" />
+    </BootstrapperApplication>
+
+    <Chain DisableSystemRestore="no">
+      <MsiPackage Id="WindowsDefragMsi"
+                  SourceFile="$(var.WindowsDefrag.Installer.TargetPath)"
+                  DisplayName="Windows Defrag"
+                  Visible="yes"
+                  Compressed="yes"
+                  Vital="yes"
+                  Permanent="no"
+                  ForcePerMachine="yes"
+                  bal:DisplayInternalUICondition="WixBundleAction = 6">
+        <MsiProperty Name="ARPSYSTEMCOMPONENT" Value="0" />
+      </MsiPackage>
+    </Chain>
+  </Bundle>
+</Wix>

@@ -1,0 +1,26 @@
+{
+  "general": {
+    "confirmBeforeDefrag": true,
+    "analyzeOnStartup": true,
+    "defaultMethod": "Space",
+    "clusterBlockSize": 8,
+    "shadedClusterView": true,
+    "showRemovable": false,
+    "theme": "system"
+  },
+  "protection": {
+    "blockSsdDefrag": true,
+    "skipOnBattery": true,
+    "minFreePercent": 8,
+    "skipPagefile": true,
+    "skipHibernation": true,
+    "excludePaths": []
+  },
+  "schedule": {
+    "enabled": false,
+    "hour": 2,
+    "minute": 0,
+    "method": "Space",
+    "driveLetters": ""
+  }
+}

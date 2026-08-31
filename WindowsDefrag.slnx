@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/WindowsDefrag/WindowsDefrag.csproj" />
+  </Folder>
+  <Folder Name="/installer/">
+    <Project Path="installer/wix/WindowsDefrag.Installer/WindowsDefrag.Installer.wixproj" />
+    <Project Path="installer/wix/WindowsDefrag.Bundle/WindowsDefrag.Bundle.wixproj" />
+  </Folder>
+</Solution>

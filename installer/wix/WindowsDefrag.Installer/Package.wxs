@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Windows Installer package (MSI) for Windows Defrag.
+  Feature tree UI: browse install folder + Start Menu and Desktop shortcuts (on by default).
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="Windows Defrag"
+           Language="1033"
+           Version="1.0.7"
+           Manufacturer="Skywere Industries"
+           UpgradeCode="C4D8A1F2-3B5E-4A7C-9D01-6F8E2B4C7A91"
+           Scope="perMachine"
+           InstallerVersion="500">
+
+    <SummaryInformation Description="Analyse and defragment hard disks, TRIM solid-state drives, and inspect cluster allocation."
+                        Manufacturer="Skywere Industries" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed. Uninstall it first if you need to roll back."
+                  AllowSameVersionUpgrades="yes"
+                  Schedule="afterInstallInitialize" />
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="AppIcon" SourceFile="..\..\..\assets\installer.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+
+    <Property Id="WD_INSTALL_DIR">
+      <RegistrySearch Id="FindWdInstallDir"
+                      Root="HKLM"
+                      Key="Software\Skywere Industries\WindowsDefrag"
+                      Name="InstallDir"
+                      Type="raw" />
+    </Property>
+
+    <util:CloseApplication Id="CloseWindowsDefrag"
+                           Target="WindowsDefrag.exe"
+                           CloseMessage="yes"
+                           ElevatedCloseMessage="yes"
+                           RebootPrompt="no"
+                           TerminateProcess="2000"
+                           PromptToContinue="no" />
+
+    <ui:WixUI Id="WixUI_FeatureTree" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+    <Feature Id="ProductFeature"
+             Title="Windows Defrag"
+             Description="Program files"
+             Level="1"
+             ConfigurableDirectory="INSTALLFOLDER"
+             AllowAbsent="no"
+             Display="expand">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="AppRegistration" />
+
+      <Feature Id="StartMenuShortcutFeature"
+               Title="Start Menu shortcuts"
+               Description="Create shortcuts under Start Menu\Skywere Industries"
+               Level="1"
+               AllowAbsent="yes">
+        <ComponentRef Id="AppShortcuts" />
+      </Feature>
+
+      <Feature Id="DesktopShortcutFeature"
+               Title="Desktop shortcut"
+               Description="Create a Windows Defrag shortcut on the Desktop"
+               Level="1"
+               AllowAbsent="yes">
+        <ComponentRef Id="DesktopShortcutComponent" />
+      </Feature>
+    </Feature>
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="WindowsDefrag" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppProgramMenuFolder" Name="Skywere Industries" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Files Include="!(bindpath.Payload)\**">
+        <Exclude Files="!(bindpath.Payload)\**\*.pdb" />
+      </Files>
+    </ComponentGroup>
+
+    <Component Id="AppRegistration"
+               Directory="INSTALLFOLDER"
+               Guid="C4D8A1F2-3B5E-4A7C-9D01-6F8E2B4C7A92"
+               Bitness="always64">
+      <RegistryValue Root="HKLM"
+                     Key="Software\Skywere Industries\WindowsDefrag"
+                     Name="InstallDir"
+                     Type="string"
+                     Value="[INSTALLFOLDER]"
+                     KeyPath="yes" />
+      <RegistryValue Root="HKLM"
+                     Key="Software\Skywere Industries\WindowsDefrag"
+                     Name="Installed"
+                     Type="integer"
+                     Value="1" />
+      <RegistryValue Root="HKLM"
+                     Key="Software\Skywere Industries\WindowsDefrag"
+                     Name="Version"
+                     Type="string"
+                     Value="[ProductVersion]" />
+      <util:RemoveFolderEx Id="RemoveInstallFolderEx"
+                           Property="WD_INSTALL_DIR"
+                           On="uninstall" />
+      <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+    </Component>
+
+    <Component Id="AppShortcuts"
+               Directory="INSTALLFOLDER"
+               Guid="C4D8A1F2-3B5E-4A7C-9D01-6F8E2B4C7A93"
+               Bitness="always64">
+      <RegistryValue Root="HKLM"
+                     Key="Software\Skywere Industries\WindowsDefrag"
+                     Name="Shortcuts"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+      <Shortcut Id="StartMenuAppShortcut"
+                Directory="AppProgramMenuFolder"
+                Name="Windows Defrag"
+                Description="Analyse and defragment disks on Windows"
+                Target="[INSTALLFOLDER]WindowsDefrag.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon"
+                IconIndex="0" />
+      <Shortcut Id="StartMenuUninstallShortcut"
+                Directory="AppProgramMenuFolder"
+                Name="Uninstall Windows Defrag"
+                Description="Uninstall Windows Defrag"
+                Target="[System64Folder]msiexec.exe"
+                Arguments="/x [ProductCode]"
+                Icon="AppIcon"
+                IconIndex="0" />
+      <RemoveFolder Id="RemoveAppProgramMenuFolder" Directory="AppProgramMenuFolder" On="uninstall" />
+    </Component>
+
+    <Component Id="DesktopShortcutComponent"
+               Directory="INSTALLFOLDER"
+               Guid="C4D8A1F2-3B5E-4A7C-9D01-6F8E2B4C7A94"
+               Bitness="always64">
+      <RegistryValue Root="HKLM"
+                     Key="Software\Skywere Industries\WindowsDefrag"
+                     Name="DesktopShortcut"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+      <Shortcut Id="DesktopAppShortcut"
+                Directory="DesktopFolder"
+                Name="Windows Defrag"
+                Description="Analyse and defragment disks on Windows"
+                Target="[INSTALLFOLDER]WindowsDefrag.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon"
+                IconIndex="0" />
+    </Component>
+
+  </Package>
+</Wix>

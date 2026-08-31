@@ -1,0 +1,346 @@
+<Window x:Class="WindowsDefrag.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:WindowsDefrag.Controls"
+        xmlns:models="clr-namespace:WindowsDefrag.Models"
+        Title="Windows Defrag"
+        Height="780" Width="1200"
+        MinHeight="560" MinWidth="960"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}"
+        Icon="pack://application:,,,/Assets/app.ico">
+
+    <Window.InputBindings>
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}"/>
+        <KeyBinding Key="F6" Command="{Binding AnalyseCommand}"/>
+        <KeyBinding Key="F7" Command="{Binding DefragmentCommand}"/>
+        <KeyBinding Key="Escape" Command="{Binding StopCommand}"/>
+    </Window.InputBindings>
+
+    <DockPanel Background="{DynamicResource WindowBackgroundBrush}">
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Refresh volumes" InputGestureText="F5" Command="{Binding RefreshCommand}"/>
+                <MenuItem Header="Relaunch as _administrator" Command="{Binding RelaunchElevatedCommand}"/>
+                <Separator/>
+                <MenuItem Header="Open _config folder" Command="{Binding OpenConfigFolderCommand}"/>
+                <MenuItem Header="Open _log folder" Command="{Binding OpenLogFolderCommand}"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Action">
+                <MenuItem Header="_Analyse" InputGestureText="F6" Command="{Binding AnalyseCommand}"/>
+                <MenuItem Header="_Defragment" InputGestureText="F7" Command="{Binding DefragmentCommand}"/>
+                <MenuItem Header="_TRIM (SSD)" Command="{Binding TrimCommand}"/>
+                <Separator/>
+                <MenuItem Header="{Binding PauseLabel}" Command="{Binding PauseCommand}"/>
+                <MenuItem Header="S_top" InputGestureText="Esc" Command="{Binding StopCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Check drive…" Command="{Binding CheckDriveCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Cluster view" Click="TabCluster_Click"/>
+                <MenuItem Header="_File status" Click="TabFiles_Click"/>
+                <MenuItem Header="_Drive status" Click="TabDrive_Click"/>
+                <MenuItem Header="_Reports" Click="TabReports_Click"/>
+                <MenuItem Header="_Jobs" Click="TabJobs_Click"/>
+                <Separator/>
+                <MenuItem Header="_Shaded cluster view" IsCheckable="True"
+                          IsChecked="{Binding ShadedView}" Click="SettingsChanged_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Jobs">
+                <MenuItem Header="Create _daily job" Command="{Binding SaveScheduleCommand}"/>
+                <MenuItem Header="_Remove scheduled job" Command="{Binding RemoveScheduleCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_Extras">
+                <MenuItem Header="_Find file position…" Command="{Binding FindFileCommand}"/>
+                <MenuItem Header="_Options…" Click="Options_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About Windows Defrag" Click="About_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <Border DockPanel.Dock="Top" Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,0,0,1" Padding="6,4">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button Content="Analyse" Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding AnalyseCommand}" ToolTip="Scan the selected volume (F6)"/>
+                    <Button Content="Defragment" Style="{StaticResource ToolbarButtonStyle}"
+                            Command="{Binding DefragmentCommand}" ToolTip="Defragment using the selected method (F7)"/>
+                    <ComboBox Width="170" Margin="4,0"
+                              ItemsSource="{Binding Methods}"
+                              SelectedItem="{Binding SelectedMethod}"
+                              ToolTip="{Binding MethodDescription}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource MethodName}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="{Binding PauseLabel}" Style="{StaticResource ToolbarButtonStyle}"
+                            Command="{Binding PauseCommand}" MinWidth="72"/>
+                    <Button Content="Stop" Style="{StaticResource ToolbarButtonStyle}"
+                            Command="{Binding StopCommand}"/>
+                    <Rectangle Width="1" Fill="{DynamicResource BorderBrushSubtle}" Margin="8,4"/>
+                    <Button Content="TRIM" Style="{StaticResource ToolbarButtonStyle}"
+                            Command="{Binding TrimCommand}"
+                            ToolTip="Issue TRIM/retrim on SSD and NVMe volumes"/>
+                    <Button Content="Check" Style="{StaticResource ToolbarButtonStyle}"
+                            Command="{Binding CheckDriveCommand}"/>
+                    <Rectangle Width="1" Fill="{DynamicResource BorderBrushSubtle}" Margin="8,4"/>
+                    <Button Content="Options" Style="{StaticResource ToolbarButtonStyle}" Click="Options_Click"/>
+                </StackPanel>
+                <TextBlock Text="{Binding MethodDescription}" VerticalAlignment="Center"
+                           Margin="12,0,8,0" TextTrimming="CharacterEllipsis"
+                           Style="{StaticResource MutedTextStyle}"/>
+            </DockPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Top" Padding="10,6"
+                Background="{DynamicResource AccentBrush}"
+                Visibility="{Binding IsElevated, Converter={StaticResource InverseBoolToVisibility}}">
+            <TextBlock Text="{Binding ElevationBanner}" Foreground="{DynamicResource OnAccentTextBrush}"
+                       TextWrapping="Wrap"/>
+        </Border>
+
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText}" MinWidth="280"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock Text="{Binding SummaryText}" Style="{StaticResource MutedTextStyle}"/>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <ProgressBar Width="160" Height="14"
+                             Minimum="0" Maximum="100"
+                             Value="{Binding ProgressValue}"
+                             IsIndeterminate="{Binding IsProgressIndeterminate}"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrushSubtle}" BorderThickness="0,1,0,0" Padding="8,4">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding LegendHint}"
+                           Style="{StaticResource MutedTextStyle}" Margin="12,0,0,0"
+                           VerticalAlignment="Center"/>
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendFree}"/>
+                        <TextBlock Text="Free" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendAllocated}"/>
+                        <TextBlock Text="Allocated" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendFragmented}"/>
+                        <TextBlock Text="Fragmented" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendDirectory}"/>
+                        <TextBlock Text="Folder" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendCompressed}"/>
+                        <TextBlock Text="Compressed" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendMft}"/>
+                        <TextBlock Text="MFT" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendPaging}"/>
+                        <TextBlock Text="Pagefile" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendLocked}"/>
+                        <TextBlock Text="Locked" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendSystem}"/>
+                        <TextBlock Text="System" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource LegendSwatchStyle}" Background="{StaticResource LegendProcessing}"/>
+                        <TextBlock Text="In process" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </WrapPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="200" MinHeight="120"/>
+                <RowDefinition Height="6"/>
+                <RowDefinition Height="*" MinHeight="180"/>
+            </Grid.RowDefinitions>
+
+            <DataGrid x:Name="DriveGrid" ItemsSource="{Binding Drives}"
+                      SelectedItem="{Binding SelectedDrive}"
+                      EnableRowVirtualization="False"
+                      EnableColumnVirtualization="False"
+                      MouseDoubleClick="DriveGrid_MouseDoubleClick">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Volume" Binding="{Binding Volume}" Width="70"/>
+                    <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="140"/>
+                    <DataGridTemplateColumn Header="Media" Width="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="{Binding Media, Converter={StaticResource MediaBrush}}"
+                                        CornerRadius="3" Padding="6,1" Margin="2" HorizontalAlignment="Left">
+                                    <TextBlock Text="{Binding MediaText}" Foreground="White" FontSize="11"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="140"/>
+                    <DataGridTemplateColumn Header="Progress" Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid Height="16" Margin="2,1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="{Binding Progress, Converter={StaticResource PercentToStar}}"/>
+                                        <ColumnDefinition Width="{Binding ProgressRemaining, Converter={StaticResource PercentToStar}}"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Background="{DynamicResource AccentBrush}" CornerRadius="2,0,0,2"/>
+                                    <Border Grid.Column="1" Background="{DynamicResource ControlBackgroundBrush}" CornerRadius="0,2,2,0"/>
+                                    <TextBlock Grid.ColumnSpan="2" Text="{Binding ProgressText}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               FontSize="10" FontWeight="SemiBold"/>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Frag. files" Binding="{Binding FragmentedFiles, StringFormat=N0}" Width="90"/>
+                    <DataGridTextColumn Header="Fragments" Binding="{Binding TotalFragments, StringFormat=N0}" Width="90"/>
+                    <DataGridTextColumn Header="Frag. %" Binding="{Binding FragPercentText}" Width="70"/>
+                    <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="80"/>
+                    <DataGridTextColumn Header="Free" Binding="{Binding FreeText}" Width="80"/>
+                    <DataGridTextColumn Header="File system" Binding="{Binding FileSystem}" Width="90"/>
+                    <DataGridTextColumn Header="Health" Binding="{Binding HealthText}" Width="90"/>
+                    <DataGridTextColumn Header="Current file" Binding="{Binding CurrentFile}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch"
+                          Background="{DynamicResource WindowBackgroundBrush}"/>
+
+            <TabControl x:Name="BottomTabs" Grid.Row="2"
+                        SelectionChanged="BottomTabs_SelectionChanged">
+                <TabItem Header="Cluster view">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="{Binding ClusterCaption}"
+                                   Margin="6,4" FontWeight="SemiBold"/>
+                        <controls:ClusterMapControl x:Name="ClusterMap"
+                                                    Map="{Binding SelectedDrive.ClusterMap}"
+                                                    ClustersPerBlock="{Binding SelectedDrive.ClustersPerBlock}"
+                                                    BlockSize="{Binding ClusterBlockSize}"
+                                                    Shaded="{Binding ShadedView}"
+                                                    Margin="4"
+                                                    MinHeight="180"/>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="File status">
+                    <DockPanel Margin="6">
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <Button Content="Defragment file" Style="{StaticResource ToolbarButtonStyle}"
+                                        Command="{Binding DefragSelectedFileCommand}"/>
+                                <Button Content="Find file…" Style="{StaticResource ToolbarButtonStyle}"
+                                        Command="{Binding FindFileCommand}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Show:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox Width="140"
+                                          ItemsSource="{Binding FileStatusModes}"
+                                          SelectedItem="{Binding FileStatusMode}"/>
+                            </StackPanel>
+                        </DockPanel>
+                        <DataGrid ItemsSource="{Binding FileStatusItems}"
+                                  SelectedItem="{Binding SelectedFile}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Fragments" Binding="{Binding Fragments}" Width="80"/>
+                                <DataGridTextColumn Header="Size" Binding="{Binding Size, Converter={StaticResource FileSize}}" Width="90"/>
+                                <DataGridTextColumn Header="Clusters" Binding="{Binding ClusterCount, StringFormat=N0}" Width="90"/>
+                                <DataGridTextColumn Header="Start LCN" Binding="{Binding StartLcn, StringFormat=N0}" Width="100"/>
+                                <DataGridTextColumn Header="File" Binding="{Binding Path}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="Drive status">
+                    <Grid Margin="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="3*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Volume" Style="{StaticResource SectionHeaderStyle}"/>
+                            <TextBlock Text="{Binding DriveStatusSummary}" TextWrapping="Wrap" LineHeight="20"/>
+                            <TextBlock Text="Used / free" Style="{StaticResource SectionHeaderStyle}" Margin="0,16,0,8"/>
+                            <Grid Height="18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{Binding SelectedDrive.UsedPercent, Converter={StaticResource PercentToStar}, FallbackValue=*}"/>
+                                    <ColumnDefinition Width="{Binding SelectedDrive.FreePercent, Converter={StaticResource PercentToStar}, FallbackValue=*}"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Background="{DynamicResource AccentBrush}"/>
+                                <Border Grid.Column="1" Background="#FFD0D0D0"/>
+                            </Grid>
+                            <TextBlock Margin="0,6,0,0" Style="{StaticResource MutedTextStyle}"
+                                       Text="{Binding SelectedDrive.UsedPercentText}"/>
+                        </StackPanel>
+                        <GroupBox Grid.Column="1" Header="Activity log" Margin="16,0,0,0">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Top" HorizontalAlignment="Right"
+                                        Content="Clear" Style="{StaticResource ToolbarButtonStyle}"
+                                        Command="{Binding ClearLogCommand}"/>
+                                <ListBox ItemsSource="{Binding LogEntries}" BorderThickness="0"
+                                         FontFamily="{StaticResource AppFontMono}" FontSize="11"/>
+                            </DockPanel>
+                        </GroupBox>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Reports">
+                    <DockPanel Margin="8">
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Open" Style="{StaticResource PrimaryButtonStyle}"
+                                    Command="{Binding OpenReportCommand}"/>
+                            <Button Content="Open folder" Style="{StaticResource ToolbarButtonStyle}"
+                                    Command="{Binding OpenReportsFolderCommand}"/>
+                        </StackPanel>
+                        <ListBox ItemsSource="{Binding Reports}" SelectedItem="{Binding SelectedReport}"
+                                 MouseDoubleClick="ReportList_MouseDoubleClick"/>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="Jobs">
+                    <StackPanel Margin="16" MaxWidth="560" HorizontalAlignment="Left">
+                        <TextBlock Text="Scheduled defragmentation" Style="{StaticResource SectionHeaderStyle}"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,12"
+                                   Text="Create a daily Windows task that runs the selected method on the selected volume. The task uses the same SSD and battery guards as the main window."/>
+                        <TextBlock Margin="0,0,0,4">
+                            <Run Text="Method: "/><Run Text="{Binding SelectedMethod, Converter={StaticResource MethodName}, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Margin="0,0,0,12">
+                            <Run Text="Volume: "/><Run Text="{Binding SelectedDrive.Volume, Mode=OneWay}"/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Create daily job" Style="{StaticResource PrimaryButtonStyle}"
+                                    Command="{Binding SaveScheduleCommand}"/>
+                            <Button Content="Remove job" Style="{StaticResource ToolbarButtonStyle}"
+                                    Command="{Binding RemoveScheduleCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </DockPanel>
+</Window>
