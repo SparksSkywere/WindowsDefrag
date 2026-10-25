@@ -13,7 +13,7 @@ Disk analysis and defragmentation utility — cluster map, layout methods, SSD/N
 Build installers:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build-installer.ps1
+powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
 The installer creates **Start Menu** and **Desktop** shortcuts under Skywere Industries (both on by default; you can uncheck them).
